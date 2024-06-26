@@ -4,21 +4,26 @@
   ...
 }:
 
-stdenv.mkDerivation {
+stdenv.mkDerivation rec {
   pname = "sf-mono-nerd-font";
   version = nerd-font-patcher.version; 
   nativeBuildInputs = [ nerd-font-patcher ];
-  src = ./sf-mono;
+  src = ./.;
 
   buildPhase = ''
     mkdir build
-    find -name \*.otf -exec nerd-font-patcher -c -out ./build {} \;
-    find -name \*.otf -exec nerd-font-patcher -c --mono -out ./build {} \;
+    if [ ${version} = $(cat ./cache/version.txt) ]; then
+      cp ./cache/share/fonts/opentype/*.otf ./build
+    else
+      find ./sf-mono -name \*.otf -exec nerd-font-patcher -c -out ./build {} \;
+      find ./sf-mono -name \*.otf -exec nerd-font-patcher -c --mono -out ./build {} \;
+    fi
   '';
 
   installPhase = ''
     mkdir -p $out/share/fonts/opentype
-    cp build/*.otf $out/share/fonts/opentype
+    cp ./build/*.otf $out/share/fonts/opentype
+    echo ${version} > $out/version.txt
   '';
 
   meta = {
