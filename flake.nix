@@ -9,11 +9,18 @@
 
   outputs = { self, nixpkgs, ... }@inputs:
     let
-      system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
+      # Function used to generate synonymous packages for multiple systems
+      #   - param(func) function with argument that takes in the pkgs for a system
+      #   - return(attrs) attribute set mapping systems to result of calling func w/ pkgs for that system
+      forAllSystems = func:
+        nixpkgs.lib.genAttrs [
+          "x86_64-linux"
+          "aarch64-linux"
+        ] (system: func nixpkgs.legacyPackages.${system});
     in {
-      packages.${system} = {
-        default = pkgs.callPackage ./. { };
-      };
+      packages = forAllSystems (pkgs: rec {
+        sf-mono = pkgs.callPackage ./. { };
+        default = sf-mono;
+      });
     };
 }
